@@ -1,0 +1,103 @@
+<?php
+function validarEntradas($valor, $moeda, $outraMoeda)
+{
+    // Decide qual moeda usar: se outraMoeda foi escolhida, usa ela, senão usa moeda
+    $moedaDestino = !empty($outraMoeda) ? $outraMoeda : $moeda;
+
+    // Array associativo que associa o código da moeda ao nome completo
+    $nomesMoedas = [
+        "USD" => "Dólar",
+        "EUR" => "Euro",
+        "GBP" => "Libra Esterlina",
+        "JPY" => "Iene Japonês",
+        "AUD" => "Dólar Australiano",
+        "CAD" => "Dólar Canadense",
+        "CHF" => "Franco Suíço",
+        "CNY" => "Yuan Chinês",
+        "ARS" => "Peso Argentino",
+        "MXN" => "Peso Mexicano",
+        "ZAR" => "Rand Sul-Africano"
+    ];
+
+    // Descobre o nome da moeda de destino,
+    $nomeMoedaDestino = isset($nomesMoedas[$moedaDestino]) ?
+        // se não encontrar usa o código da moeda
+        $nomesMoedas[$moedaDestino] : $moedaDestino;
+
+    // Validação
+    if ($valor <= 0) {
+        return ["erro" => "Informe um valor em Real maior que zero."];
+    } elseif (empty($moedaDestino)) {
+        return ["erro" => "Selecione uma moeda para conversão."];
+    }
+
+    // Se a conversão for bem-sucedida, a função retorna um array.
+    // Esse array contém os dados que serão exibidos na página de resultados.
+    return [
+        // O campo "erro" é uma string vazia, indicando que não houve problemas.
+        "erro" => "", 
+        // O valor original em Reais (R$).
+        "valor" => $valor, 
+        // A sigla da moeda de destino (ex: USD, EUR).
+        "moedaDestino" => $moedaDestino, 
+        // O nome completo da moeda de destino (ex: Dólar Americano, Euro).
+        "nomeMoedaDestino" => $nomeMoedaDestino 
+    ];
+}
+
+
+// Verifica se os campos foram enviados
+$valor = isset($_GET['n_valor']) ? floatval($_GET['n_valor']) : 0;
+$moeda = isset($_GET['n_moeda']) ? $_GET['n_moeda'] : '';
+$outraMoeda = isset($_GET['n_outrasMoeda']) ? $_GET['n_outrasMoeda'] : '';
+
+// Valida entradas usando a função criada lá em cima
+$validacao = validarEntradas($valor, $moeda, $outraMoeda);
+
+$erro = $validacao['erro'];
+$taxa = 0;
+$resultado = 0;
+$nomeMoedaDestino = $validacao['nomeMoedaDestino'] ?? '';
+$moedaDestino = $validacao['moedaDestino'] ?? '';
+
+if (!$erro) {
+    $url = "https://open.er-api.com/v6/latest/BRL";
+    $json = @file_get_contents($url);
+    if ($json !== false) {
+        $dados = json_decode($json, true);
+        if (isset($dados['rates'][$moedaDestino])) {
+            $taxa = $dados['rates'][$moedaDestino];
+            $resultado = $valor * $taxa;
+        } else {
+            $erro = "Moeda não encontrada na API.";
+        }
+    } else {
+        $erro = "Erro ao acessar a API de câmbio.";
+    }
+}
+?>
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Resultado da Conversão</title>
+    <link rel="stylesheet" href="./../css/style.css">
+</head>
+
+<body>
+    <main class="container">
+        <h2>Resultado da Conversão</h2>
+        <?php if ($erro): ?>
+            <p class="error-message"><?= $erro ?></p>
+        <?php else: ?>
+            <p>Valor em Real: <strong>R$ <?= number_format($valor, 2, ',', '.') ?></strong></p>
+            <p>Moeda de destino: <strong><?= htmlspecialchars($nomeMoedaDestino) ?></strong></p>
+            <p>Taxa de câmbio: <strong><?= $taxa ?></strong></p>
+            <p>Valor convertido: <strong><?= $moedaDestino ?>     <?= number_format($resultado, 2, ',', '.') ?></strong></p>
+        <?php endif; ?>
+        <a href="../index.html" class="btn-voltar">&#8592; Nova conversão</a>
+    </main>
+</body>
+
+</html>
