@@ -101,6 +101,19 @@ select {
     background-size: 18px;
 }
 
+.btn-voltar {
+    display: inline-block;
+    margin-top: 20px;
+    color: #e75480;
+    text-decoration: none;
+    /* Adicionando um pequeno hover para interatividade */
+    transition: color 0.2s;
+}
+
+.btn-voltar:hover {
+    color: #d72660; /* Uma cor um pouco mais escura para o efeito hover */
+}
+
 @media (max-width: 500px) {
     .container {
         max-width: 98vw;
